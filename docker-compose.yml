@@ -1,0 +1,58 @@
+# version: '3'
+
+networks:
+  internal:
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - '8000:80'
+    volumes:
+      - ./project-core:/var/www
+      - ./config/nginx:/etc/nginx/conf.d
+      - ./data/logs:/var/log/nginx/
+    depends_on:
+      - php
+      - mysql-cinema-db
+    networks:
+      - internal
+
+  php:
+    build:
+      context: ./config/php
+      dockerfile: Dockerfile
+    container_name: php
+    volumes:
+      - ./project-core:/var/www
+      # - ./config/php/php.ini:/usr/local/etc/php/php.ini
+    ports:
+      - '9000:9000'
+    networks:
+      - internal
+
+  mysql-cinema-db:
+    image: mysql:latest
+    container_name: mysql-cinema-db
+    restart: unless-stopped
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: yesenin
+    networks:
+      - internal
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql-cinema-db
+    restart: unless-stopped
+    ports:
+      - '8001:80'
+    networks:
+      - internal
